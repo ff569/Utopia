@@ -1,21 +1,13 @@
-from aiohttp import web
-import threading
-
-def run_web():
-    app = web.Application()
-    app.router.add_get("/", lambda r: web.Response(text="OK"))
-    web.run_app(app, port=10000)
-
-threading.Thread(target=run_web, daemon=True).start()
-
 import vk_api
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 import random
 import json
 import os
+import asyncio
+from aiohttp import web
 
-TOKEN = "vk1.a.D19ZfgOmb6IvttQL1f7ynd_Bz_n9jSyXZ0YbuEoZJ9AgjzdF0IhXx0UXSpOdvXGw-aFzjiITsdAmgPEq6Sng6CiAvCjx6Htw-5ah3RGKsBoRXcqSSGf2UnmS2cH1wfeoLREoFkqNauODk-gOX67zD9eXDf21bfF0jMWW0A1bgy3Tk5k-Hm0Xzo3nDIYXsnddUK8hzWQuTCvjsPMwULJKWQ"
+TOKEN = "vk1.a.cMOdvL8EJQrp1C_Bj_be-sTgIvPn-iec2fz7ImZ7Hd2RbkN608fgYcOO-FyY7TA7QK5-mbdYhjMRhO2FPCQrMtFh4yZAo5FCfAcwpbEvqjNSkBWUMuct8gWRuOVDDe1aeOv4XVLTuG3jaq8YlS3varwwBYckW-OC9eM0TlOO42HLb3VuUSjG0aw4z6Ox1DVpaKjaEptK0KXYXPPiqkJxbw"
 GROUP_ID = 241068675
 ADMIN_ID = 878507317
 
