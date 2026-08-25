@@ -5,7 +5,7 @@ import random
 import json
 import os
 
-TOKEN = "vk1.a.SqUwMmZD5bxTa1r7Kk-OyiAXe4f7FpgaPtlRvbhNgh4JZnHgzSgXwlRvVHcYPx3uCnyAgRlfleHc9fqRXYANSwxHLaMzgfZVc0djJ7IMC7dIfQovPmHt-vrimCHnmT57OCe75qvPVEkC8aL3GtvpfzSY0Y4mMvtHncfU8jzAJ7PdvZKTb4CJgC3TRbP7HourdrDQli1Y70Ksy-ZP100-dw"
+TOKEN = "vk1.a.cdIvMa4vCvNxx_JVhAOrSe2HNa_rZOIjkkoCd4-cDoldjao-aPuonlQFCHpWFnovNvD0gJrXM7Nj15LpxZUxbMvPzdbEEH-mRqeM8DJ5st9rXwcD8AgRBYilg-MC58uCvIBaE4N4S2BNoFhl0q4ln6n7Yl0oeG81roTHI7QXJbGqlwcVuFt00EKReWdKnrPxyFiii-s5MfhV4Kg5PRwPnQ"
 GROUP_ID = 241068675
 ADMIN_ID = 878507317
 
