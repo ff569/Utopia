@@ -1,3 +1,13 @@
+from aiohttp import web
+import threading
+
+def run_web():
+    app = web.Application()
+    app.router.add_get("/", lambda r: web.Response(text="OK"))
+    web.run_app(app, port=10000)
+
+threading.Thread(target=run_web, daemon=True).start()
+
 import vk_api
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
