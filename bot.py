@@ -1,4 +1,20 @@
 import vk_api
+import os
+from threading import Thread
+from aiohttp import web
+
+async def handle_ping(request):
+    return web.Response(text="OK")
+
+def run_web():
+    app = web.Application()
+    app.router.add_get("/", handle_ping)
+    # Render сам подставит нужный порт в переменную PORT
+    port = int(os.environ.get("PORT", 10000)) 
+    web.run_app(app, host="0.0.0.0", port=port)
+
+# Запускаем веб-сервер в фоне, чтобы он не мешал боту
+Thread(target=lambda: asyncio.run(run_web()), daemon=True).start()
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 import random
