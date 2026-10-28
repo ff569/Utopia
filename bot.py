@@ -1,7 +1,12 @@
 import vk_api
 import os
+import asyncio
+import random
+import json
 from threading import Thread
 from aiohttp import web
+from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
 async def handle_ping(request):
     return web.Response(text="OK")
@@ -9,19 +14,13 @@ async def handle_ping(request):
 def run_web():
     app = web.Application()
     app.router.add_get("/", handle_ping)
-    # Render сам подставит нужный порт в переменную PORT
-    port = int(os.environ.get("PORT", 10000)) 
+    port = int(os.environ.get("PORT", 10000))
     web.run_app(app, host="0.0.0.0", port=port)
 
-# Запускаем веб-сервер в фоне, чтобы он не мешал боту
+# Запускаем веб-сервер в фоне
 Thread(target=lambda: asyncio.run(run_web()), daemon=True).start()
-from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
-from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-import random
-import json
-import os
-import asyncio
-from aiohttp import web
+
+# Дальше идет твой код с токеном:
 
 TOKEN = "vk1.a.gMk75jCPeMk7qkAf-qB2WmBzhsH-_6GdPBHl1RsyP3dfyyHWCJdkZnkzLZYByrCuDYSqbIepYnZGtMyR616QCbVFiZP5KmzYS9VdI5p4lKAFQ58E9Znihb-Z34zFTaq_nvrZykovKolrNvdfB0nIAwjJSu_GGSPxz0fIURKeM7hdFNExG73gxURGuK5oM-xUg8RxdrWi0c0s6_Bs3JxWzg"
 GROUP_ID = 241068675
