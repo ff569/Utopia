@@ -1,5 +1,5 @@
 import os
-import threading
+import asyncio
 import random
 import json
 import logging
@@ -11,18 +11,12 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 # Настройка логов
 logging.basicConfig(level=logging.INFO)
 
-# --- ЗАГЛУШКА ДЛЯ RENDER (чтобы не было Port scan timeout) ---
+# --- ЗАГЛУШКА ДЛЯ RENDER ---
 async def handle_ping(request):
     return web.Response(text="OK")
 
-def run_web_server():
-    app = web.Application()
-    app.router.add_get("/", handle_ping)
-    port = int(os.environ.get("PORT", 10000))
-    web.run_app(app, host="0.0.0.0", port=port)
-
-# --- ЛОГИКА БОТА ВК ---
-def start_vk_bot():
+# --- ЛОГИКА БОТА ВК (В ФОНЕ) ---
+async def start_vk_bot():
     TOKEN = "vk1.a.gMk75jCPeMk7qkAf-qB2WmBzhsH-_6GdPBHl1RsyP3dfyyHWCJdkZnkzLZYByrCuDYSqbIepYnZGtMyR616QCbVFiZP5KmzYS9VdI5p4lKAFQ58E9Znihb-Z34zFTaq_nvrZykovKolrNvdfB0nIAwjJSu_GGSPxz0fIURKeM7hdFNExG73gxURGuK5oM-xUg8RxdrWi0c0s6_Bs3JxWzg"
     GROUP_ID = 241068675
     ADMIN_ID = 878507317
@@ -32,21 +26,14 @@ def start_vk_bot():
     
     try:
         longpoll = VkBotLongPoll(vk_session, GROUP_ID)
-        print("✅ LongPoll успешно подключен")
+        print("✅ LongPoll подключен")
     except Exception as e:
-        print(f"❌ Ошибка подключения LongPoll: {e}")
+        print(f"❌ Ошибка LongPoll: {e}")
         return
 
     DB_FILE = "bookings.json"
-
-    SERVICES = {
-        "УСЛУГА_1": "ЦЕНА_1",
-        "УСЛУГА_2": "ЦЕНА_2",
-        "УСЛУГА_3": "ЦЕНА_3",
-    }
-
+    SERVICES = {"УСЛУГА_1": "ЦЕНА_1", "УСЛУГА_2": "ЦЕНА_2", "УСЛУГА_3": "ЦЕНА_3"}
     TIMES = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00"]
-
     user_states = {}
     user_data = {}
 
@@ -101,112 +88,99 @@ def start_vk_bot():
         return keyboard.get_keyboard()
 
     def send_message(user_id, text, keyboard=None):
-        vk.messages.send(
-            user_id=user_id,
-            message=text,
-            keyboard=keyboard,
-            random_id=random.randint(1, 1000000)
-        )
+        vk.messages.send(user_id=user_id, message=text, keyboard=keyboard, random_id=random.randint(1, 1000000))
 
-    print("🚀 Бот ВК запущен и слушает сообщения...")
+    print("🚀 Бот ВК запущен")
     
-    for event in longpoll.listen():
-        if event.type == VkBotEventType.MESSAGE_NEW:
-            msg = event.object.message
-            user_id = msg['from_id']
-            text = msg['text'].lower()
-            
-            state = user_states.get(user_id, "main")
-            
-            if text in ["начать", "start", "привет", "меню"]:
-                user_states[user_id] = "main"
-                send_message(user_id, 
-                    "👤 Добро пожаловать!\n\n"
-                    "Выберите действие:", main_menu_keyboard())
-            
-            elif state == "main":
-                if "цена" in text:
-                    prices = "💈 Цены:\n\n"
-                    for service, price in SERVICES.items():
-                        prices += f"{service} — {price}\n"
-                    send_message(user_id, prices, main_menu_keyboard())
-                
-                elif "адрес" in text:
-                    send_message(user_id, 
-                        "📍 ВСТАВЬ_АДРЕС\n"
-                        "🕙 ВСТАВЬ_ВРЕМЯ_РАБОТЫ", main_menu_keyboard())
-                
-                elif "запис" in text:
-                    user_states[user_id] = "choosing_service"
-                    send_message(user_id, "Выберите услугу:", service_keyboard())
-                
-                elif "отзыв" in text:
-                    send_message(user_id, 
-                        "⭐ ВСТАВЬ_ОТЗЫВЫ", main_menu_keyboard())
-                
-                else:
-                    send_message(user_id, "Напишите «начать»", main_menu_keyboard())
-            
-            elif state == "choosing_service":
-                if text in SERVICES:
-                    user_data[user_id] = {"service": text, "price": SERVICES[text]}
-                    user_states[user_id] = "choosing_time"
-                    send_message(user_id, f"Выбрано: {text} — {SERVICES[text]}\n\nВыберите время:", time_keyboard())
-                elif "назад" in text:
-                    user_states[user_id] = "main"
-                    send_message(user_id, "Главное меню:", main_menu_keyboard())
-                else:
-                    send_message(user_id, "Выберите услугу из списка:", service_keyboard())
-            
-            elif state == "choosing_time":
-                if text in TIMES:
-                    user_data[user_id]["time"] = text
-                    user_states[user_id] = "confirming"
-                    data = user_data[user_id]
-                    send_message(user_id, 
-                        f"📋 Проверьте запись:\n\n"
-                        f"Услуга: {data['service']}\n"
-                        f"Цена: {data['price']}\n"
-                        f"Время: {data['time']}\n\n"
-                        f"Подтвердите:", confirm_keyboard())
-                elif "назад" in text:
-                    user_states[user_id] = "choosing_service"
-                    send_message(user_id, "Выберите услугу:", service_keyboard())
-                else:
-                    send_message(user_id, "Выберите время из списка:", time_keyboard())
-            
-            elif state == "confirming":
-                if "подтвердить" in text:
-                    data = user_data.get(user_id, {})
-                    data["user_id"] = user_id
-                    save_booking(data)
-                    user_states[user_id] = "main"
-                    send_message(user_id, 
-                        "✅ Запись подтверждена!\n\n"
-                        f"Услуга: {data['service']}\n"
-                        f"Время: {data['time']}\n\n"
-                        "Ждём вас!", main_menu_keyboard())
+    # Запускаем цикл в фоне
+    while True:
+        try:
+            for event in longpoll.listen():
+                if event.type == VkBotEventType.MESSAGE_NEW:
+                    msg = event.object.message
+                    user_id = msg['from_id']
+                    text = msg['text'].lower()
                     
-                    vk.messages.send(
-                        user_id=ADMIN_ID,
-                        message=f"🆕 Новая запись!\n\n"
-                                f"Клиент: @id{user_id}\n"
-                                f"Услуга: {data['service']}\n"
-                                f"Цена: {data['price']}\n"
-                                f"Время: {data['time']}",
-                        random_id=random.randint(1, 1000000)
-                    )
-                
-                elif "отменить" in text:
-                    user_states[user_id] = "main"
-                    send_message(user_id, "Запись отменена.", main_menu_keyboard())
-                
-                else:
-                    send_message(user_id, "Подтвердите или отмените.", confirm_keyboard())
+                    state = user_states.get(user_id, "main")
+                    
+                    if text in ["начать", "start", "привет", "меню"]:
+                        user_states[user_id] = "main"
+                        send_message(user_id, "👤 Добро пожаловать!\n\nВыберите действие:", main_menu_keyboard())
+                    
+                    elif state == "main":
+                        if "цена" in text:
+                            prices = "💈 Цены:\n\n"
+                            for service, price in SERVICES.items():
+                                prices += f"{service} — {price}\n"
+                            send_message(user_id, prices, main_menu_keyboard())
+                        elif "адрес" in text:
+                            send_message(user_id, "📍 ВСТАВЬ_АДРЕС\n🕙 ВСТАВЬ_ВРЕМЯ_РАБОТЫ", main_menu_keyboard())
+                        elif "запис" in text:
+                            user_states[user_id] = "choosing_service"
+                            send_message(user_id, "Выберите услугу:", service_keyboard())
+                        elif "отзыв" in text:
+                            send_message(user_id, "⭐ ВСТАВЬ_ОТЗЫВЫ", main_menu_keyboard())
+                        else:
+                            send_message(user_id, "Напишите «начать»", main_menu_keyboard())
+                    
+                    elif state == "choosing_service":
+                        if text in SERVICES:
+                            user_data[user_id] = {"service": text, "price": SERVICES[text]}
+                            user_states[user_id] = "choosing_time"
+                            send_message(user_id, f"Выбрано: {text} — {SERVICES[text]}\n\nВыберите время:", time_keyboard())
+                        elif "назад" in text:
+                            user_states[user_id] = "main"
+                            send_message(user_id, "Главное меню:", main_menu_keyboard())
+                        else:
+                            send_message(user_id, "Выберите услугу из списка:", service_keyboard())
+                    
+                    elif state == "choosing_time":
+                        if text in TIMES:
+                            user_data[user_id]["time"] = text
+                            user_states[user_id] = "confirming"
+                            data = user_data[user_id]
+                            send_message(user_id, f"📋 Проверьте запись:\n\nУслуга: {data['service']}\nЦена: {data['price']}\nВремя: {data['time']}\n\nПодтвердите:", confirm_keyboard())
+                        elif "назад" in text:
+                            user_states[user_id] = "choosing_service"
+                            send_message(user_id, "Выберите услугу:", service_keyboard())
+                        else:
+                            send_message(user_id, "Выберите время из списка:", time_keyboard())
+                    
+                    elif state == "confirming":
+                        if "подтвердить" in text:
+                            data = user_data.get(user_id, {})
+                            data["user_id"] = user_id
+                            save_booking(data)
+                            user_states[user_id] = "main"
+                            send_message(user_id, f"✅ Запись подтверждена!\n\nУслуга: {data['service']}\nВремя: {data['time']}\n\nЖдём вас!", main_menu_keyboard())
+                            vk.messages.send(user_id=ADMIN_ID, message=f"🆕 Новая запись!\n\nКлиент: @id{user_id}\nУслуга: {data['service']}\nЦена: {data['price']}\nВремя: {data['time']}", random_id=random.randint(1, 1000000))
+                        elif "отменить" in text:
+                            user_states[user_id] = "main"
+                            send_message(user_id, "Запись отменена.", main_menu_keyboard())
+                        else:
+                            send_message(user_id, "Подтвердите или отмените.", confirm_keyboard())
+        except Exception as e:
+            print(f"Ошибка в цикле: {e}")
+            await asyncio.sleep(5)
 
-# --- ЗАПУСК ---
+# --- ГЛАВНЫЙ ЗАПУСК ---
+async def main():
+    # Запускаем бота в фоне
+    asyncio.create_task(start_vk_bot())
+    
+    # Запускаем веб-сервер (главный поток)
+    app = web.Application()
+    app.router.add_get("/", handle_ping)
+    port = int(os.environ.get("PORT", 10000))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    print(f"✅ Веб-сервер запущен на порту {port}")
+    
+    # Держим процесс живым
+    while True:
+        await asyncio.sleep(3600)
+
 if __name__ == "__main__":
-    # Запускаем бота в фоновом потоке
-    threading.Thread(target=start_vk_bot, daemon=True).start()
-    # Запускаем веб-сервер в главном потоке (обязательно для Render)
-    run_web_server()
+    asyncio.run(main())
