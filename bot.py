@@ -7,7 +7,7 @@ import os
 import asyncio
 from aiohttp import web
 
-TOKEN = "vk1.a.cMOdvL8EJQrp1C_Bj_be-sTgIvPn-iec2fz7ImZ7Hd2RbkN608fgYcOO-FyY7TA7QK5-mbdYhjMRhO2FPCQrMtFh4yZAo5FCfAcwpbEvqjNSkBWUMuct8gWRuOVDDe1aeOv4XVLTuG3jaq8YlS3varwwBYckW-OC9eM0TlOO42HLb3VuUSjG0aw4z6Ox1DVpaKjaEptK0KXYXPPiqkJxbw"
+TOKEN = "vk1.a.gMk75jCPeMk7qkAf-qB2WmBzhsH-_6GdPBHl1RsyP3dfyyHWCJdkZnkzLZYByrCuDYSqbIepYnZGtMyR616QCbVFiZP5KmzYS9VdI5p4lKAFQ58E9Znihb-Z34zFTaq_nvrZykovKolrNvdfB0nIAwjJSu_GGSPxz0fIURKeM7hdFNExG73gxURGuK5oM-xUg8RxdrWi0c0s6_Bs3JxWzg"
 GROUP_ID = 241068675
 ADMIN_ID = 878507317
 
