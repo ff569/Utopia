@@ -1,5 +1,5 @@
 import os
-import asyncio
+import threading
 import random
 import json
 import logging
@@ -10,10 +10,12 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
 logging.basicConfig(level=logging.INFO)
 
+# --- ВЕБ-СЕРВЕР ДЛЯ RENDER (главный поток) ---
 async def handle_ping(request):
     return web.Response(text="OK")
 
-async def start_vk_bot():
+# --- ЛОГИКА БОТА ВК (фоновый поток) ---
+def start_vk_bot():
     TOKEN = "vk1.a.gMk75jCPeMk7qkAf-qB2WmBzhsH-_6GdPBHl1RsyP3dfyyHWCJdkZnkzLZYByrCuDYSqbIepYnZGtMyR616QCbVFiZP5KmzYS9VdI5p4lKAFQ58E9Znihb-Z34zFTaq_nvrZykovKolrNvdfB0nIAwjJSu_GGSPxz0fIURKeM7hdFNExG73gxURGuK5oM-xUg8RxdrWi0c0s6_Bs3JxWzg"
     GROUP_ID = 241068675
     ADMIN_ID = 878507317
@@ -87,7 +89,7 @@ async def start_vk_bot():
     def send_message(user_id, text, keyboard=None):
         vk.messages.send(user_id=user_id, message=text, keyboard=keyboard, random_id=random.randint(1, 1000000))
 
-    print("🚀 Бот ВК запущен")
+    print("🚀 Бот ВК запущен (в потоке)")
     
     while True:
         try:
@@ -157,25 +159,16 @@ async def start_vk_bot():
                             send_message(user_id, "Подтвердите или отмените.", confirm_keyboard())
         except Exception as e:
             print(f"Ошибка в цикле: {e}")
-            await asyncio.sleep(5)
+            import time
+            time.sleep(5)
 
-async def main():
-    # Запускаем бота в фоне
-    asyncio.create_task(start_vk_bot())
+# --- ЗАПУСК ---
+if __name__ == "__main__":
+    # Запускаем бота ВК в фоновом потоке (он блокирующий, но не мешает вебу)
+    threading.Thread(target=start_vk_bot, daemon=True).start()
     
-    # Запускаем веб-сервер в главном потоке
+    # Запускаем веб-сервер в ГЛАВНОМ потоке (Render его видит)
     app = web.Application()
     app.router.add_get("/", handle_ping)
     port = int(os.environ.get("PORT", 10000))
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-    print(f"✅ Веб-сервер запущен на порту {port}")
-    
-    # Держим процесс живым
-    while True:
-        await asyncio.sleep(3600)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    web.run_app(app, host="0.0.0.0", port=port)
