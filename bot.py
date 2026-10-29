@@ -1,3 +1,4 @@
+# Version 2.0 - Working Bot
 import os
 import threading
 import random
