@@ -1,4 +1,3 @@
-# Version 2.0 - Working Bot
 import os
 import threading
 import random
@@ -174,7 +173,7 @@ def start_vk_bot():
 
 # --- ЗАПУСК ---
 if __name__ == "__main__":
-    # Сначала запускаем веб-сервер в главном потоке (Render его увидит)
-    # Бот запускаем в фоне
+    # Бот в фоновом потоке
     threading.Thread(target=start_vk_bot, daemon=True).start()
+    # Веб-сервер в главном потоке
     run_web_server()
