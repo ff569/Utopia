@@ -173,7 +173,5 @@ def start_vk_bot():
 
 # --- ЗАПУСК ---
 if __name__ == "__main__":
-    # Бот в фоновом потоке
     threading.Thread(target=start_vk_bot, daemon=True).start()
-    # Веб-сервер в главном потоке
     run_web_server()
